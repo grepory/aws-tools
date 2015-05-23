@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+# TODO: Can we possibly find out what region Packer just tried to build in (even if Packer failed)?
+
+if [ ! -x "`which jq`" ]; then
+  echo "Installing prerequisites..."
+  brew install jq
+  brew install awscli
+fi
+
+aws ec2 describe-security-groups \
+  | jq -a -c '[.SecurityGroups[] \
+  | [.GroupName,.GroupId]] \
+  | map(select(.[0] | contains("packer"))) \
+  | map(.[1]) \
+  | .[]' \
+  | xargs -n1 aws ec2 delete-security-group --group-id
+
+# TODO: Clean up SSH keys
+# TODO: Clean up instances
